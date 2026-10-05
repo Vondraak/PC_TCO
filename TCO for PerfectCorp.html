@@ -72,6 +72,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 td{padding:4px 6px;border-top:1px solid var(--line);vertical-align:middle}
 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 td input,td select{min-width:0}
+td select{padding-right:24px;text-overflow:clip}
 .tco-h{display:flex;justify-content:space-between;align-items:center;margin:16px 0 4px}
 .tco-h h3{margin:0;font-size:14px;color:var(--accent)}
 .totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:10px}
@@ -451,15 +452,15 @@ function renderTco(){
       const nm=el('input');nm.type='text';nm.value=r.name;nm.oninput=()=>{r.name=nm.value;persist()};
       const td1=el('td');td1.appendChild(nm);tr.appendChild(td1);
       const ow=el('select');Object.keys(OWNERS).forEach(o=>{const op=el('option','',OWNERS[o]);op.value=o;if(o===r.owner)op.selected=true;ow.appendChild(op)});
-      ow.onchange=()=>{r.owner=ow.value;persist()};const td2=el('td');td2.appendChild(ow);tr.appendChild(td2);
+      ow.onchange=()=>{r.owner=ow.value;persist()};const td2=el('td');td2.style.width='125px';td2.appendChild(ow);tr.appendChild(td2);
       const co=el('input');co.type='number';co.min=0;co.step='any';co.value=r.cost||'';co.placeholder='0';co.oninput=()=>{r.cost=+co.value||0;persist();updateTotals()};
       const td3=el('td');td3.style.width='110px';td3.appendChild(co);tr.appendChild(td3);
       const qt=el('input');qt.type='number';qt.min=0;qt.step='any';qt.value=r.qty;qt.oninput=()=>{r.qty=+qt.value||0;persist();updateTotals()};
       const td4=el('td');td4.style.width='64px';td4.appendChild(qt);tr.appendChild(td4);
       const fr=el('select');g.freqs.forEach(f=>{const op=el('option','',FREQ[f]);op.value=f;if(f===r.freq)op.selected=true;fr.appendChild(op)});
-      fr.onchange=()=>{r.freq=fr.value;persist();updateTotals()};const td5=el('td');td5.style.width='110px';td5.appendChild(fr);tr.appendChild(td5);
+      fr.onchange=()=>{r.freq=fr.value;persist();updateTotals()};const td5=el('td');td5.style.width='125px';td5.appendChild(fr);tr.appendChild(td5);
       const sc=el('select');[['kiosk','Per kiosk'],['flat','Flat']].forEach(([v,l])=>{const op=el('option','',l);op.value=v;if(v===r.scope)op.selected=true;sc.appendChild(op)});
-      sc.onchange=()=>{r.scope=sc.value;persist();updateTotals()};const td6=el('td');td6.style.width='100px';td6.appendChild(sc);tr.appendChild(td6);
+      sc.onchange=()=>{r.scope=sc.value;persist();updateTotals()};const td6=el('td');td6.style.width='130px';td6.appendChild(sc);tr.appendChild(td6);
       const lt=el('td','num');lt.dataset.lt=g.id+':'+idx;tr.appendChild(lt);
       const dx=el('td');const x=el('button','x','\u00d7');x.title='Remove line';x.onclick=()=>{g.rows.splice(idx,1);persist();renderTco()};dx.appendChild(x);tr.appendChild(dx);
       tb.appendChild(tr);
