@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enlightened LED + Perfect Corp: TCO and Responsibilities</title>
+<style>
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#2a3342; --text:#e6edf3; --muted:#8b98a9;
+  --accent:#4cc9f0; --eled:#4cc9f0; --pc:#b794f6; --both:#f6c453; --vendor:#5fd38d; --retail:#f78fb3;
+  --open:#f6a05a; --done:#5fd38d;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Calibri,sans-serif}
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+aside{position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:18px 14px}
+aside h1{font-size:15px;margin:0 0 2px;color:var(--text)}
+aside .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+nav a{display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:6px;color:var(--muted);text-decoration:none;font-size:13px}
+nav a:hover{background:var(--panel2);color:var(--text)}
+nav a.active{background:var(--panel2);color:var(--accent)}
+nav a .cnt{font-size:11px;color:var(--open)}
+nav .grp{margin:14px 10px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5d6b7e}
+main{padding:24px 32px 80px;max-width:1100px}
+.toolbar{position:sticky;top:0;z-index:5;background:rgba(13,17,23,.94);backdrop-filter:blur(6px);padding:12px 0 12px;border-bottom:1px solid var(--line);margin-bottom:20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toolbar input[type=search]{flex:1 1 220px;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:4px 10px;border-radius:999px;cursor:pointer;font-size:12px;user-select:none}
+.chip.on{color:#0d1117;font-weight:600}
+.chip[data-k=all].on,.chip[data-s=all].on{background:var(--text)}
+.chip[data-s=open].on{background:var(--open)} .chip[data-s=done].on{background:var(--done)}
+.chip[data-k=ELED].on{background:var(--eled)} .chip[data-k=PC].on{background:var(--pc)}
+.chip[data-k=SHARED].on{background:var(--both)} .chip[data-k=VENDOR].on{background:var(--vendor)} .chip[data-k=RETAIL].on{background:var(--retail)}
+.btnrow{display:flex;gap:6px}
+button{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px}
+button:hover{border-color:var(--accent)}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:24px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.stat b{display:block;font-size:22px}
+.stat span{color:var(--muted);font-size:12px}
+details.sec{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:14px}
+details.sec>summary{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::before{content:"\25B8";color:var(--muted);transition:transform .15s}
+details.sec[open]>summary::before{transform:rotate(90deg)}
+details.sec>summary h2{margin:0;font-size:17px;flex:1}
+.pill{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+.pill.o{color:var(--open)}
+.body{padding:0 18px 16px}
+.intro{color:var(--muted);margin:0 0 10px}
+.item{display:grid;grid-template-columns:64px 1fr 74px;gap:12px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
+.tag{font-size:10.5px;font-weight:700;text-align:center;padding:2px 0;border-radius:4px;letter-spacing:.04em;margin-top:2px}
+.tag.ELED{background:rgba(76,201,240,.15);color:var(--eled)} .tag.PC{background:rgba(183,148,246,.15);color:var(--pc)}
+.tag.SHARED{background:rgba(246,196,83,.15);color:var(--both)} .tag.VENDOR{background:rgba(95,211,141,.15);color:var(--vendor)}
+.tag.RETAIL{background:rgba(247,143,179,.15);color:var(--retail)}
+.txt .note{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.item.open .txt .main{color:var(--text)}
+.item.done .txt .main{color:#c9d4e0}
+.st{font-size:11px;text-align:center;padding:2px 0;border-radius:4px;cursor:pointer;border:1px solid transparent;margin-top:2px;user-select:none}
+.st.open{color:var(--open);border-color:rgba(246,160,90,.4)}
+.st.done{color:var(--done);border-color:rgba(95,211,141,.4)}
+.sub3{margin:16px 0 4px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+.callout{background:var(--panel2);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;color:#c9d4e0}
+.hidden{display:none!important}
+/* TCO */
+.inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+label.f{display:block;font-size:12px;color:var(--muted)}
+input[type=number],input[type=text],select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:100%;font:inherit}
+table{width:100%;border-collapse:collapse;margin-bottom:10px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:4px 6px;border-top:1px solid var(--line);vertical-align:middle}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td input,td select{min-width:0}
+.tco-h{display:flex;justify-content:space-between;align-items:center;margin:16px 0 4px}
+.tco-h h3{margin:0;font-size:14px;color:var(--accent)}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:10px}
+.tot{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.tot span{font-size:12px;color:var(--muted)} .tot b{display:block;font-size:20px}
+.tot.hl{border-color:var(--accent)}
+.x{color:var(--muted);cursor:pointer;background:none;border:0;font-size:15px}
+.x:hover{color:#ff6b6b}
+@media(max-width:860px){.layout{grid-template-columns:1fr}aside{position:static;height:auto}.item{grid-template-columns:56px 1fr}.st{grid-column:2}}
+@media print{aside,.toolbar{display:none}.layout{display:block}details.sec{border:0}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside>
+  <h1>ELED + Perfect Corp</h1>
+  <div class="sub">TCO and responsibilities. Internal working document.</div>
+  <nav id="nav"></nav>
+</aside>
+<main>
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Search all items...">
+    <div class="chips" id="ownerChips"></div>
+    <div class="chips" id="statusChips"></div>
+    <div class="btnrow"><button id="expand">Expand all</button><button id="collapse">Collapse all</button></div>
+  </div>
+  <div class="summary" id="summary"></div>
+  <div id="sections"></div>
+</main>
+</div>
+
+<script>
+const OWNERS={ELED:'ELED',PC:'PERFECT',SHARED:'SHARED',VENDOR:'VENDOR',RETAIL:'RETAIL'};
+const OWNER_NAMES={ELED:'Enlightened LED',PC:'Perfect Corp',SHARED:'Shared / both',VENDOR:'Vendors (MV3D, Grassfish, Blink, Axon Ivy)',RETAIL:'Retailer / brand'};
+// I(owner, status, text, note)
+const I=(o,s,t,n)=>({o,s,t,n});
+const D='done', O='open';
+
+const SECTIONS=[
+{id:'plan',group:'Planning',title:'Timeline, PoC, and open internal items',
+ intro:'ELED-internal actions to get to a proof of concept and revenue.',
+ items:[
+  I('SHARED',D,'ELED provides PC a path into brick-and-mortar stores, completing PC\'s omnichannel offering.'),
+  I('ELED',D,'Target for time to revenue is Q3/Q4.'),
+  I('ELED',O,'Are we designing the demo solution for a small-footprint boutique or a large department store?'),
+  I('ELED',O,'How do we reduce friction for the consumer: choices available, location in store, location on shelf?'),
+  I('ELED',D,'ELED needs to drive toward a proof of concept (PoC).'),
+  I('SHARED',O,'Focus groups with PC are needed to understand what to highlight and build into the monetizable solution set.'),
+  I('ELED',O,'How do we build a pricing menu?'),
+  I('VENDOR',O,'What are all the points of integration?','Known so far: Grassfish to PC, and Grassfish to Blink.'),
+  I('ELED',D,'Friday session with Wayne: ELED needs answers to the questions in this document and will send a high-level document in advance.')
+ ]},
+{id:'framing',group:'Planning',title:'Friday framing: seven core questions',
+ intro:'The high-level split to take into the meeting with Wayne.',
+ items:[
+  I('PC',D,'What PC provides: applications and modules, accessed through API keys and SKUs that ELED embeds in the solution.'),
+  I('ELED',D,'What ELED builds: the UI for the in-store services shoppers use, plus hardware, compute, and configuration.'),
+  I('VENDOR',D,'Grassfish-to-Blink integration is built by those vendors, and integration points are paid for by the vendor, not ELED.'),
+  I('PC',D,'In-store experience flow: Wayne and his marketing team define the expected flow (log in, trigger components, access omnichannel data).'),
+  I('ELED',D,'Support: ELED is building a digital signage network with uptime telemetry.'),
+  I('PC',D,'ELED has no access to the PC system, so when PC changes an API and that affects the in-store presentation, PC is responsible.'),
+  I('SHARED',O,'SLA: an SLA is needed with PC and with Blink (via MV3D, if needed). What are the terms?'),
+  I('SHARED',O,'Why are so many in-store screens down in the market, and what outage reporting or insights can be offered?','Emmet will ask about this.'),
+  I('PC',D,'PC pays for content curation and support (unless PC wants to host the cloud), monitoring, labor overhead, content creation, and network operations.'),
+  I('SHARED',D,'Cost model: initial CapEx covers build-out, hardware, and installation. Recurring fees cover the SLA, system telemetry, and cloud hosting.')
+ ]},
+{id:'division',group:'Core topics',title:'Division of responsibilities',
+ intro:'The first questions to settle before anything else.',
+ items:[
+  I('ELED',D,'ELED provides any 3D assets and all integration with PC, Grassfish, and Blink.'),
+  I('PC',D,'Brands may provide 3D object files, if they have them.'),
+  I('PC',O,'Does PC provide true 3D assets, depth data, or multiview output, or only a conventional 2D camera image?'),
+  I('ELED',D,'Baseline compute is an RTX 4060 GPU, Windows 11, and internet connectivity. Final specs are determined on receipt of the screen from MV3D.'),
+  I('ELED',D,'Shopper self-service needs end-user experience (EUX) testing, since the flow is developed around the experience PC wants in store.'),
+  I('PC',O,'What personal or biometric data is captured, stored, or transmitted?'),
+  I('ELED',D,'If the store internet connection is interrupted, the PC experience cannot run, but ELED continues to run its local 3D assets.'),
+  I('SHARED',O,'Is connectivity cellular or store-provided?','Raises security issues. To be discussed transaction by transaction.'),
+  I('VENDOR',D,'Products, shades, prices, and inventory are connected to retailers through orchestration, in Phase II or III. It is not done at the player level. Axon Ivy would manage this at the corporate level.'),
+  I('SHARED',D,'Deployment, monitoring, maintenance, and support are owned by ELED in conjunction with suppliers. PC is responsible for its own software.'),
+  I('SHARED',D,'PC is ELED\'s customer and a reseller of ELED hardware.')
+ ]},
+{id:'journey',group:'Core topics',title:'Experience and customer journey',
+ intro:'Walk through the intended shopper experience from beginning to end.',
+ items:[
+  I('ELED',D,'Attract: a 3D content loop draws the shopper in. The store or brand decides which "attract" products are featured.'),
+  I('SHARED',D,'The initial demo experience is built with PC\'s marketing team.'),
+  I('PC',O,'Should PC suggest brands or retailers based on presentations it has already made, for example Estee Lauder?'),
+  I('ELED',D,'Computer vision (CV) triggers the handoff from the 3D loop into an avatar or a PC application.'),
+  I('ELED',D,'ELED should be able to introduce a PQLabs touchscreen.'),
+  I('ELED',D,'Touch interaction screen content is built in HTML, with 3D assets supplied by the creative team.'),
+  I('SHARED',D,'ELED needs a tight MVP experience to sell, then builds logical roadmaps for brands and retailers from PC\'s usage-tracking data.'),
+  I('SHARED',O,'How long should a typical session last?','Likely dictated by brand and retailer. Research needed on effectiveness.'),
+  I('PC',D,'Users can explore anonymously, using the supplied PC models.'),
+  I('PC',D,'Consent is built into the PC solution.'),
+  I('PC',O,'Can shoppers save results through a QR code, email, SMS, or retailer app?','Perfect Corp needs to answer this.'),
+  I('PC',D,'Customers access the omnichannel experience (from the sofa into the store) by logging in.'),
+  I('SHARED',O,'Can it recommend products currently available in that specific store?','Handled by the orchestration layer. How does PC handle this at Sephora?'),
+  I('PC',D,'Multiple languages are supported by PC.'),
+  I('ELED',D,'The session is cleared for the next shopper with an end-session button or a time-out, and CV also detects the shopper leaving.')
+ ]},
+{id:'integration',group:'Core topics',title:'Integration and architecture',
+ intro:'A clear system diagram and division of responsibilities is needed.',
+ items:[
+  I('SHARED',D,'Preferred integration is REST API, standard call and response.','Alternatives considered: web widget, JavaScript SDK, native SDK.'),
+  I('SHARED',O,'Produce a system diagram showing ELED, PC, MetaVista, Grassfish, Blink, Axon Ivy, and retailer systems with the responsibility split.')
+ ]},
+{id:'3d',group:'Core topics',title:'MetaVista and 3D output',
+ intro:'This is where the partnership becomes differentiated, so be precise.',
+ items:[
+  I('PC',O,'Does PC generate any true 3D facial geometry?'),
+  I('PC',O,'Can PC provide a face mesh, landmark coordinates, or a depth map?'),
+  I('PC',O,'Can PC output an image with transparency?'),
+  I('PC',O,'Can makeup effects be mapped onto an external 3D face model?'),
+  I('ELED',D,'ELED produces the left- and right-eye views. PC does not need to provide them.'),
+  I('PC',O,'Can PC generate multiple camera views in real time?'),
+  I('PC',O,'Can the output be ingested by Unity?'),
+  I('PC',O,'Can PC provide product models in FBX, GLB, OBJ, or USD format?'),
+  I('SHARED',O,'Who owns creation and optimization of product models?'),
+  I('PC',O,'Do PC effects remain correctly aligned as the displayed head rotates?'),
+  I('PC',O,'What are the maximum output resolution and frame rate?'),
+  I('PC',O,'What latency is introduced by facial analysis and rendering?'),
+  I('PC',O,'Are PC shaders compatible with Unity and MetaVista\'s multiview renderer?'),
+  I('SHARED',O,'Decision: do we show (A) a PC application on a conventional 2D interface next to 3D promotional content, or (B) PC\'s actual try-on and analysis results transformed into glasses-free 3D?','Option B is more differentiated but requires much deeper technical integration.')
+ ]},
+{id:'hardware',group:'Core topics',title:'Hardware requirements',
+ intro:'Ask PC for a certified bill of materials; ELED owns screen design and placement.',
+ items:[
+  I('PC',O,'Camera make, model, and resolution.'),
+  I('PC',O,'Camera placement and viewing distance.'),
+  I('PC',O,'Required lighting and color temperature.'),
+  I('PC',O,'Touchscreen requirements.'),
+  I('PC',O,'Microphone requirements.'),
+  I('PC',O,'Minimum CPU, GPU, memory, and storage.','ELED baseline is RTX 4060 pending the MV3D screen.'),
+  I('ELED',D,'Operating system is Windows 11.'),
+  I('PC',O,'Network bandwidth and latency.'),
+  I('SHARED',O,'Portrait versus landscape orientation.'),
+  I('PC',O,'Supported display resolutions.'),
+  I('VENDOR',D,'Lighting and its variations are handled with physical lighting, owned by the vendor, not within the app.'),
+  I('PC',O,'How does makeup color accuracy change under store lighting?','Beauty applications can give poor results if lighting, camera exposure, and display color are not tightly controlled.'),
+  I('ELED',O,'Screen design: angled wedge or free-standing beauty station?'),
+  I('ELED',O,'Screen placement in store (demise real estate).'),
+  I('ELED',D,'Layered presentation: whole-screen 3D for attract mode. When the shopper triggers it, the display switches to the 2D Perfect Corp application with 3D UI elements blended in.'),
+  I('SHARED',D,'Separate interaction and presentation displays are not used; a single display handles both.'),
+  I('SHARED',O,'Must the camera be integrated into the primary display?'),
+  I('PC',O,'Calibration requirements.')
+ ]},
+{id:'data',group:'Core topics',title:'Product, inventory, and commerce data',
+ intro:'Determine who supplies and maintains each item. This requires middleware and integration to retailer systems, so it is Phase II or III.',
+ items:[
+  I('RETAIL',O,'Product catalog.'),
+  I('RETAIL',O,'Shade information.'),
+  I('RETAIL',O,'Product imagery.'),
+  I('RETAIL',O,'Ingredients and claims.'),
+  I('RETAIL',O,'Pricing and promotions.'),
+  I('RETAIL',O,'Store-level inventory.'),
+  I('RETAIL',O,'Product-location information.'),
+  I('PC',O,'Related-product recommendations.'),
+  I('RETAIL',O,'Shopping-cart integration.'),
+  I('RETAIL',O,'Loyalty-program connection.'),
+  I('RETAIL',O,'Point-of-sale integration.'),
+  I('SHARED',O,'How often does this information update, and what happens when a recommended item is unavailable?')
+ ]},
+{id:'privacy',group:'Core topics',title:'Privacy, consent, and security',
+ intro:'The application analyzes faces and skin, so this must be resolved early.',
+ items:[
+  I('PC',O,'Does PC classify any captured information as biometric data?'),
+  I('PC',O,'Are images transmitted to the cloud?'),
+  I('PC',O,'Are photos or videos stored?'),
+  I('PC',O,'Where is data processed and hosted?'),
+  I('PC',O,'How long is it retained?'),
+  I('PC',D,'The system can operate without identifying the shopper (anonymous exploration with supplied PC models).'),
+  I('PC',D,'Consent is built into the PC solution.','Still confirm how consent is obtained and logged.'),
+  I('PC',O,'How is data deleted after each session?'),
+  I('PC',O,'Does PC provide standard privacy language and signage?'),
+  I('PC',D,'Perfect Corp acts as data controller and data processor.'),
+  I('PC',O,'What security certifications does PC maintain?'),
+  I('PC',O,'How are minors handled?'),
+  I('SHARED',O,'Can retailers configure different privacy rules by jurisdiction?'),
+  I('SHARED',O,'Who manages a data-subject access or deletion request?'),
+  I('SHARED',O,'Who is responsible if a shopper makes a privacy complaint?')
+ ]},
+{id:'ops',group:'Core topics',title:'Store operations and support',
+ items:[
+  I('ELED',D,'ELED installs and commissions each kiosk.'),
+  I('ELED',O,'Can store personnel restart the kiosk without technical assistance?'),
+  I('ELED',D,'ELED monitors kiosks remotely through Grassfish.'),
+  I('PC',O,'What information can PC expose about application health?'),
+  I('SHARED',D,'Support tiers: Tier 1 (hardware) is owned by ELED. Tier 2 is blended, with ELED owning hardware and PC owning software. Tier 3 is owned by PC.'),
+  I('SHARED',O,'What are the support hours and service-level commitments?'),
+  I('SHARED',D,'Software updates are pushed manually and remotely once validated for hardware compatibility. PC owns change management for features and functions within the PC app.'),
+  I('ELED',D,'Updates can be tested in a sandbox by ELED before reaching production kiosks. This testing is factored into support costs if requested.'),
+  I('PC',D,'When PC changes an API, PC is responsible for resolving any in-store impact.'),
+  I('PC',O,'How frequently must cameras or displays be recalibrated?'),
+  I('SHARED',D,'PC and ELED train store associates.'),
+  I('VENDOR',D,'ELED and MV3D supply replacement hardware.'),
+  I('VENDOR',O,'What is the defined warranty on screens, speakers/mics, and cameras?'),
+  I('SHARED',O,'What is the target uptime?'),
+  I('SHARED',O,'What SLAs apply to equipment and to PC\'s apps?'),
+  I('ELED',D,'When PC services are unavailable, the kiosk falls back to 3D attract loops.')
+ ]},
+{id:'analytics',group:'Core topics',title:'Analytics, ROI, and Targets',
+ intro:'Agree on measurement and targets before building the pilot. Brands and the retailer need this data to agree to invest, and ELED needs it to improve the offering, day-part, and more. Ask whether PC can expose each metric.',
+ items:[
+  I('PC',O,'How many sessions?'),
+  I('PC',O,'What is the approach-to-engagement rate?'),
+  I('PC',O,'How long is each session?'),
+  I('PC',O,'Which applications are used?'),
+  I('PC',O,'Which products and shades are tried?'),
+  I('PC',O,'How many recommendations are generated?'),
+  I('PC',O,'How many QR codes are scanned?'),
+  I('RETAIL',O,'How many products are added to cart?'),
+  I('RETAIL',O,'How many purchases are attributed to the kiosk?'),
+  I('RETAIL',O,'What is the basket-size change?'),
+  I('RETAIL',O,'What is the conversion-rate change?'),
+  I('SHARED',O,'What is the repeat engagement rate?'),
+  I('SHARED',O,'What is the split between associate-assisted and self-service sessions?'),
+  I('ELED',O,'What are system uptime and the abandoned-session rate?'),
+  I('SHARED',O,'Who owns the data, and can ELED, PC, the retailer, and the brand each access it?')
+ ]},
+{id:'commercial',group:'Core topics',title:'Commercial and partnership structure',
+ items:[
+  I('PC',D,'PC is the contracting party with the retailer or beauty brand.'),
+  I('SHARED',D,'PC invoices the purchaser. ELED invoices PC.','Covers hardware, software, installation, and support invoicing.'),
+  I('PC',D,'Perfect Corp will provide ELED API access without throttling. PC is ultimately a reseller of ELED hardware, so PC consumes its own licensing.'),
+  I('PC',D,'PC will resell the hardware platform/system built by ELED.'),
+  I('SHARED',O,'Can the solution be white-labeled or co-branded?'),
+  I('SHARED',O,'Who owns the combined solution and any newly developed integration?'),
+  I('SHARED',O,'Can either company sell the offering independently?'),
+  I('SHARED',O,'How are leads registered and protected?'),
+  I('SHARED',O,'How are revenue and implementation fees divided?'),
+  I('SHARED',O,'Are there channel, territory, or exclusivity restrictions?'),
+  I('SHARED',O,'Who funds demonstrations, trade shows, and pilots?'),
+  I('PC',D,'PC owns the customer relationship after installation.')
+ ]},
+{id:'outcomes',group:'Wrap-up',title:'Meeting outcomes and pilot recommendation',
+ intro:'The meeting should produce six concrete deliverables.',
+ items:[
+  I('SHARED',O,'A defined initial kiosk use case.'),
+  I('PC',O,'A list of PC modules included in the pilot.'),
+  I('SHARED',O,'A technical architecture and API approach.'),
+  I('SHARED',O,'A responsibility matrix separating Perfect Corp, ELED, MetaVista, and retailer duties.'),
+  I('SHARED',O,'A pilot scope, timeline, and estimated cost.'),
+  I('SHARED',O,'A commercial model and named executive and technical owners.')
+ ],
+ callout:'Recommendation: keep the first pilot narrow. One retailer, one brand or product family, two or three PC applications, one guided customer journey, and a defined set of KPIs.'
+}
+];
+
+// ---------- state ----------
+const LS='eled-pc-tco-v1';
+let saved={}; try{saved=JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){}
+saved.status=saved.status||{};
+const persist=()=>{try{localStorage.setItem(LS,JSON.stringify(saved))}catch(e){}};
+const state={q:'',owner:'all',status:'all'};
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
+const key=(s,i)=>s.id+':'+i;
+const stat=(s,i)=>saved.status[key(s,i)]||SECTIONS.find(x=>x.id===s).items[i].s;
+
+// ---------- render ----------
+function renderSections(){
+  const host=document.getElementById('sections'); host.innerHTML='';
+  SECTIONS.forEach(sec=>{
+    const d=el('details','sec'); d.id=sec.id; d.open=true;
+    const sm=el('summary'); sm.appendChild(el('h2','',sec.title));
+    const p=el('span','pill o'); p.dataset.cnt=sec.id; sm.appendChild(p); d.appendChild(sm);
+    const b=el('div','body'); if(sec.intro)b.appendChild(el('p','intro',sec.intro));
+    sec.items.forEach((it,i)=>{
+      const row=el('div','item'); row.dataset.sec=sec.id; row.dataset.i=i; row.dataset.owner=it.o;
+      row.appendChild(el('div','tag '+it.o,OWNERS[it.o]));
+      const t=el('div','txt'); t.appendChild(el('span','main',it.t));
+      if(it.n)t.appendChild(el('span','note',it.n)); row.appendChild(t);
+      const st=el('div','st'); st.title='Click to toggle open / answered';
+      st.onclick=()=>{saved.status[key(sec.id,i)]=stat(sec.id,i)==='open'?'done':'open';persist();paint()};
+      row.appendChild(st); b.appendChild(row);
+    });
+    if(sec.callout)b.appendChild(el('div','callout',sec.callout));
+    d.appendChild(b); host.appendChild(d);
+  });
+  const tco=document.getElementById('tcoHost'); if(tco)host.appendChild(tco);
+}
+
+function paint(){
+  const q=state.q.toLowerCase();
+  let tOpen=0,tDone=0;
+  SECTIONS.forEach(sec=>{
+    let vis=0,open=0,done=0;
+    document.querySelectorAll(`.item[data-sec="${sec.id}"]`).forEach(row=>{
+      const i=+row.dataset.i, it=sec.items[i], s=stat(sec.id,i);
+      row.classList.toggle('open',s==='open'); row.classList.toggle('done',s==='done');
+      const st=row.querySelector('.st'); st.textContent=s==='open'?'Open':'Answered'; st.className='st '+s;
+      const hay=(it.t+' '+(it.n||'')+' '+OWNER_NAMES[it.o]).toLowerCase();
+      const show=(!q||hay.includes(q))&&(state.owner==='all'||it.o===state.owner)&&(state.status==='all'||s===state.status);
+      row.classList.toggle('hidden',!show);
+      if(show)vis++;
+      if(s==='open')open++;else done++;
+    });
+    tOpen+=open;tDone+=done;
+    const sd=document.getElementById(sec.id); sd.classList.toggle('hidden',vis===0);
+    sd.querySelector('[data-cnt]').textContent=open+' open / '+(open+done);
+    const nl=document.querySelector(`nav a[href="#${sec.id}"] .cnt`); if(nl)nl.textContent=open||'';
+  });
+  document.getElementById('summary').innerHTML='';
+  [['Total items',tOpen+tDone],['Open',tOpen],['Answered',tDone]].forEach(([l,v])=>{
+    const s=el('div','stat');s.appendChild(el('b','',v));s.appendChild(el('span','',l));document.getElementById('summary').appendChild(s)});
+  ['ELED','PC','SHARED','VENDOR','RETAIL'].forEach(k=>{
+    let n=0;SECTIONS.forEach(sec=>sec.items.forEach((it,i)=>{if(it.o===k&&stat(sec.id,i)==='open')n++}));
+    const s=el('div','stat');s.appendChild(el('b','',n));s.appendChild(el('span','','Open: '+OWNER_NAMES[k].split(' (')[0]));document.getElementById('summary').appendChild(s)});
+}
+
+function renderNav(){
+  const nav=document.getElementById('nav'); nav.innerHTML=''; let g='';
+  SECTIONS.forEach(sec=>{
+    if(sec.group!==g){g=sec.group;nav.appendChild(el('div','grp',g))}
+    const a=el('a');a.href='#'+sec.id;a.appendChild(el('span','',sec.title));a.appendChild(el('span','cnt'));nav.appendChild(a);
+  });
+  nav.appendChild(el('div','grp','Cost'));
+  const a=el('a');a.href='#tco';a.appendChild(el('span','','TCO calculator'));nav.appendChild(a);
+}
+
+function renderChips(){
+  const oc=document.getElementById('ownerChips'); oc.innerHTML='';
+  [['all','All owners'],['ELED','ELED'],['PC','Perfect'],['SHARED','Shared'],['VENDOR','Vendors'],['RETAIL','Retailer']].forEach(([k,l])=>{
+    const c=el('span','chip'+(state.owner===k?' on':''),l);c.dataset.k=k;c.onclick=()=>{state.owner=k;renderChips();paint()};oc.appendChild(c)});
+  const sc=document.getElementById('statusChips'); sc.innerHTML='';
+  [['all','Any status'],['open','Open'],['done','Answered']].forEach(([k,l])=>{
+    const c=el('span','chip'+(state.status===k?' on':''),l);c.dataset.s=k;c.onclick=()=>{state.status=k;renderChips();paint()};sc.appendChild(c)});
+}
+
+// ---------- TCO ----------
+const FREQ={once:'One-time',monthly:'Monthly',quarterly:'Quarterly',annual:'Annual'};
+const ANNUAL_MULT={monthly:12,quarterly:4,annual:1};
+const DEFAULT_TCO={
+  kiosks:1,years:3,margin:0,
+  groups:[
+   {id:'hw',title:'Per-kiosk hardware',freqs:['once'],rows:[
+     ['3D display (MetaVista MV3D)','VENDOR'],['Compute (RTX 4060, Windows 11)','ELED'],['Camera(s)','ELED'],['Touchscreen (PQLabs, optional)','VENDOR'],
+     ['Directional audio','ELED'],['Microphone','ELED'],['Enclosure / stand','ELED'],['Cabling and accessories','ELED'],['Shipping, install, commissioning','ELED']]},
+   {id:'lic',title:'Per-kiosk licensing',freqs:['monthly','quarterly','annual','once'],rows:[
+     ['Blink license','VENDOR'],['Grassfish license','VENDOR'],['PC modules / API keys (SKUs)','PC'],['OS and other software licenses','ELED']]},
+   {id:'sup',title:'Ongoing support and monitoring',freqs:['monthly','quarterly','annual'],rows:[
+     ['Remote monitoring and telemetry (Grassfish)','VENDOR'],['Tier 1 to 3 support','SHARED'],['Content curation and creation','ELED'],['Network operations','ELED'],
+     ['Cloud hosting (if ELED hosts)','ELED'],['Hardware replacement / warranty reserve','ELED'],['Labor overhead and associate training','SHARED']]},
+   {id:'one',title:'One-time services and integration (fleet-wide)',freqs:['once'],rows:[
+     ['Integration build (vendor-funded; enter only ELED-borne cost)','VENDOR'],['UI build and EUX testing','ELED']]}
+  ]
+};
+const mkRow=(g,[name,owner])=>({name,owner,cost:0,qty:1,freq:g.freqs[0],scope:g.id==='one'?'flat':'kiosk'});
+function initTco(){
+  if(saved.tco)return;
+  saved.tco={kiosks:DEFAULT_TCO.kiosks,years:DEFAULT_TCO.years,margin:DEFAULT_TCO.margin,
+    groups:DEFAULT_TCO.groups.map(g=>({id:g.id,title:g.title,freqs:g.freqs,rows:g.rows.map(r=>mkRow(g,r))}))};
+}
+const money=n=>n.toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:0});
+function rowTotal(r,k){return (+r.cost||0)*(+r.qty||0)*(r.scope==='kiosk'?k:1)}
+
+function renderTco(){
+  initTco(); const T=saved.tco;
+  let host=document.getElementById('tcoHost');
+  if(!host){host=el('details','sec');host.id='tcoHost';host.open=true;}
+  host.innerHTML='';
+  const sm=el('summary');sm.id='tco';sm.appendChild(el('h2','','TCO calculator (ELED cost)'));host.appendChild(sm);
+  const b=el('div','body');
+  b.appendChild(el('p','intro','Enter real numbers once hardware is scoped with MV3D. Edits are saved in this browser. "Per kiosk" scales with the kiosk count; "Flat" is counted once.'));
+  const inp=el('div','inputs');
+  [['Number of kiosks','kiosks',1],['Evaluation term (years)','years',1],['Target margin on cost (%)','margin',0]].forEach(([l,k,min])=>{
+    const w=el('label','f',l);const i=el('input');i.type='number';i.min=min;i.value=T[k];
+    i.oninput=()=>{T[k]=+i.value||0;persist();updateTotals()};w.appendChild(i);inp.appendChild(w)});
+  b.appendChild(inp);
+
+  T.groups.forEach(g=>{
+    const h=el('div','tco-h');h.appendChild(el('h3','',g.title));
+    const add=el('button','','+ Add line');add.onclick=()=>{g.rows.push(mkRow(g,['New item','ELED']));persist();renderTco()};h.appendChild(add);b.appendChild(h);
+    const tb=el('table');
+    const hr=el('tr');['Item','Owner','Unit cost','Qty','Billing','Scope','Line total',''].forEach(x=>hr.appendChild(el('th','',x)));tb.appendChild(hr);
+    g.rows.forEach((r,idx)=>{
+      const tr=el('tr');
+      const nm=el('input');nm.type='text';nm.value=r.name;nm.oninput=()=>{r.name=nm.value;persist()};
+      const td1=el('td');td1.appendChild(nm);tr.appendChild(td1);
+      const ow=el('select');Object.keys(OWNERS).forEach(o=>{const op=el('option','',OWNERS[o]);op.value=o;if(o===r.owner)op.selected=true;ow.appendChild(op)});
+      ow.onchange=()=>{r.owner=ow.value;persist()};const td2=el('td');td2.appendChild(ow);tr.appendChild(td2);
+      const co=el('input');co.type='number';co.min=0;co.step='any';co.value=r.cost||'';co.placeholder='0';co.oninput=()=>{r.cost=+co.value||0;persist();updateTotals()};
+      const td3=el('td');td3.style.width='110px';td3.appendChild(co);tr.appendChild(td3);
+      const qt=el('input');qt.type='number';qt.min=0;qt.step='any';qt.value=r.qty;qt.oninput=()=>{r.qty=+qt.value||0;persist();updateTotals()};
+      const td4=el('td');td4.style.width='64px';td4.appendChild(qt);tr.appendChild(td4);
+      const fr=el('select');g.freqs.forEach(f=>{const op=el('option','',FREQ[f]);op.value=f;if(f===r.freq)op.selected=true;fr.appendChild(op)});
+      fr.onchange=()=>{r.freq=fr.value;persist();updateTotals()};const td5=el('td');td5.style.width='110px';td5.appendChild(fr);tr.appendChild(td5);
+      const sc=el('select');[['kiosk','Per kiosk'],['flat','Flat']].forEach(([v,l])=>{const op=el('option','',l);op.value=v;if(v===r.scope)op.selected=true;sc.appendChild(op)});
+      sc.onchange=()=>{r.scope=sc.value;persist();updateTotals()};const td6=el('td');td6.style.width='100px';td6.appendChild(sc);tr.appendChild(td6);
+      const lt=el('td','num');lt.dataset.lt=g.id+':'+idx;tr.appendChild(lt);
+      const dx=el('td');const x=el('button','x','\u00d7');x.title='Remove line';x.onclick=()=>{g.rows.splice(idx,1);persist();renderTco()};dx.appendChild(x);tr.appendChild(dx);
+      tb.appendChild(tr);
+    });
+    b.appendChild(tb);
+  });
+
+  const reset=el('button','','Reset calculator');reset.onclick=()=>{if(confirm('Reset all TCO inputs?')){delete saved.tco;persist();renderTco();updateTotals()}};
+  const tot=el('div','totals');tot.id='totals';b.appendChild(tot);
+  const rw=el('div','btnrow');rw.style.marginTop='12px';rw.appendChild(reset);b.appendChild(rw);
+  host.appendChild(b);
+  document.getElementById('sections').appendChild(host);
+  updateTotals();
+}
+
+function updateTotals(){
+  const T=saved.tco,k=+T.kiosks||0;
+  let once=0,annual=0;
+  const parts={hw:0,lic:0,sup:0,one:0};
+  T.groups.forEach(g=>g.rows.forEach((r,idx)=>{
+    const lt=rowTotal(r,k);
+    const cell=document.querySelector(`[data-lt="${g.id}:${idx}"]`);
+    if(cell)cell.textContent=money(lt)+(r.freq==='once'?'':' / '+r.freq.replace('ly','').replace('annua','year').replace('month','mo').replace('quarter','qtr'));
+    if(r.freq==='once')once+=lt;else annual+=lt*ANNUAL_MULT[r.freq];
+  }));
+  const yrs=+T.years||0;
+  const y1=once+annual, term=once+annual*yrs;
+  const sell=T.margin>0&&T.margin<100?term/(1-T.margin/100):term;
+  const items=[
+   ['One-time cost',money(once),false],
+   ['Recurring per month',money(annual/12),false],
+   ['Recurring per quarter',money(annual/4),false],
+   ['Recurring per year',money(annual),false],
+   ['Year-1 total',money(y1),false],
+   [yrs+'-year TCO',money(term),true],
+   ['TCO per kiosk ('+yrs+' yr)',k?money(term/k):'$0',true],
+   ['Suggested sell price to PC ('+yrs+' yr)',money(sell),true]
+  ];
+  const host=document.getElementById('totals');host.innerHTML='';
+  items.forEach(([l,v,hl])=>{const t=el('div','tot'+(hl?' hl':''));t.appendChild(el('span','',l));t.appendChild(el('b','',v));host.appendChild(t)});
+}
+
+// ---------- wire up ----------
+renderSections(); renderTco(); renderNav(); renderChips(); paint();
+document.getElementById('q').oninput=e=>{state.q=e.target.value;paint()};
+document.getElementById('expand').onclick=()=>document.querySelectorAll('details.sec').forEach(d=>d.open=true);
+document.getElementById('collapse').onclick=()=>document.querySelectorAll('details.sec').forEach(d=>d.open=false);
+const links=[...document.querySelectorAll('nav a')];
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+(e.target.id==='tcoHost'?'tco':e.target.id)))}}),{rootMargin:'-20% 0px -70% 0px'});
+document.querySelectorAll('details.sec').forEach(d=>io.observe(d));
+</script>
+</body>
+</html>
