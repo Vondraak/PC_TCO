@@ -57,7 +57,7 @@ details.sec>summary h2{margin:0;font-size:17px;flex:1}
 .txt .note{display:block;color:var(--muted);font-size:13px;margin-top:2px}
 .item.open .txt .main{color:var(--text)}
 .item.done .txt .main{color:#c9d4e0}
-.st{font-size:11px;text-align:center;padding:2px 0;border-radius:4px;cursor:pointer;border:1px solid transparent;margin-top:2px;user-select:none}
+.st{font-size:11px;text-align:center;padding:2px 0;border-radius:4px;border:1px solid transparent;margin-top:2px;user-select:none}
 .st.open{color:var(--open);border-color:rgba(246,160,90,.4)}
 .st.done{color:var(--done);border-color:rgba(95,211,141,.4)}
 .sub3{margin:16px 0 4px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
@@ -329,7 +329,7 @@ const persist=()=>{try{localStorage.setItem(LS,JSON.stringify(saved))}catch(e){}
 const state={q:'',owner:'all',status:'all'};
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
 const key=(s,i)=>s.id+':'+i;
-const stat=(s,i)=>saved.status[key(s,i)]||SECTIONS.find(x=>x.id===s).items[i].s;
+const stat=(s,i)=>SECTIONS.find(x=>x.id===s).items[i].s;
 
 // ---------- render ----------
 function renderSections(){
@@ -344,8 +344,7 @@ function renderSections(){
       row.appendChild(el('div','tag '+it.o,OWNERS[it.o]));
       const t=el('div','txt'); t.appendChild(el('span','main',it.t));
       if(it.n)t.appendChild(el('span','note',it.n)); row.appendChild(t);
-      const st=el('div','st'); st.title='Click to toggle open / answered';
-      st.onclick=()=>{saved.status[key(sec.id,i)]=stat(sec.id,i)==='open'?'done':'open';persist();paint()};
+      const st=el('div','st');
       row.appendChild(st); b.appendChild(row);
     });
     if(sec.callout)b.appendChild(el('div','callout',sec.callout));
